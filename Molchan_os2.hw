@@ -1,0 +1,25 @@
+sudo unshare --fork --pid --mount-proc top
+Монтируем top в новом ns
+
+[root@10 ~]# ps a
+  PID TTY      STAT   TIME COMMAND
+  424 tty1     Ss+    0:00 /sbin/agetty --noclear tty1 linux
+ 1705 pts/0    Ss     0:00 -bash
+ 1728 pts/0    S      0:00 sudo -i
+ 1730 pts/0    S      0:00 -bash
+ 1747 pts/0    S      0:00 -bash
+ 1770 pts/0    S      0:00 -bash
+ 2039 pts/1    Ss     0:00 -bash
+ 2063 pts/1    S      0:00 sudo -i
+ 2065 pts/1    S      0:00 -bash
+ 2122 pts/0    S+     0:00 unshare --fork --pid --mount-proc top
+ 2123 pts/0    S+     0:00 top
+ 2147 pts/1    R+     0:00 ps a
+[root@10 ~]# nsenter -t 2123 -m -p
+Подключаемся к этому процессу
+
+[root@10 /]# ps a
+  PID TTY      STAT   TIME COMMAND
+    1 pts/0    S+     0:00 top
+   21 pts/1    S      0:00 -bash
+   38 pts/1    R+     0:00 ps a
