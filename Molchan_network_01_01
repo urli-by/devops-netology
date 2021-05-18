@@ -1,0 +1,323 @@
+1.	Необязательное задание: можно посмотреть целый фильм в консоли telnet towel.blinkenlights.nl :)
+Правда, пришлось вначале включить выключенный по умолчанию телнет
+
+2.	Узнайте о том, сколько действительно независимых (не пересекающихся) каналов есть в разделяемой среде WiFi при работе на 2.4 ГГц. Стандарты с полосой 5 ГГц более актуальны, но регламенты на 5 ГГц существенно различаются в разных странах, а также не раз обновлялись. В качестве дополнительного вопроса вне зачета, попробуйте найти актуальный ответ и на этот вопрос.
+В 2.4ГГЦ есть три непересекающихся канала – 1,6,11
+Количество таких каналов в 5ГГЦ сети зависит от локального законодательства чаще всего и от размещения на смежных частотах метеорологического оборудования, к примеру(116-132 в США). 
+Для РБ это 19 каналов:
+36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140
+3.	Адрес канального уровня – MAC адрес – это 6 байт, первые 3 из которых называются OUI – Organizationally Unique Identifier или уникальный идентификатор организации. Какому производителю принадлежит MAC 38:f9:d3:55:55:79?
+OUI	MAC range	Company
+38-F9-D3	38-F9-D3-00-00-00 - 38-F9-D3-FF-FF-FF
+Apple, Inc.
+
+
+4.	Каким будет payload TCP сегмента, если Ethernet MTU задан в 9001 байт, размер заголовков IPv4 – 20 байт, а TCP – 32 байта?
+ 
+Пользуясь это картинкой можно выяснить, payload TCP сегмента = 9001 – 20-20 = 1961
+5.	Может ли во флагах TCP одновременно быть установлены флаги SYN и FIN при штатном режиме работы сети? Почему да или нет?
+Комбинация флага SYN и FIN, устанавливаемого в заголовке TCP, является недопустимой и относится к категории комбинации недопустимого / ненормального флага, поскольку она требует как установления соединения (через SYN), так и прекращения соединения (через FIN).
+Способ обработки таких недопустимых / аномальных комбинаций флагов не передается в RFC TCP. Таким образом, такие недопустимые / ненормальные комбинации флагов обрабатываются по-разному в разных операционных системах. Различные операционные системы также генерируют разные типы ответов для таких пакетов.
+Это очень большая проблема для сообщества безопасности, потому что злоумышленники должны использовать эти ответные пакеты, чтобы определить тип операционной системы в целевой системе для создания своей атаки. Таким образом, такие комбинации флагов всегда рассматриваются как вредоносные, и современные системы обнаружения вторжений обнаруживают такие комбинации, чтобы избежать атак.
+
+6.	ss -ula sport = :53 на хосте имеет следующий вывод:
+State           Recv-Q          Send-Q                   Local Address:Port                     Peer Address:Port          Process
+UNCONN          0               0                        127.0.0.53%lo:domain                        0.0.0.0:*
+Почему в State присутствует только UNCONN, и может ли там присутствовать, например, TIME-WAIT?
+Udp – протокол без установления соединения, поэтому состояние может быть или unconn или estab
+7.	Обладая знаниями о том, как штатным образом завершается соединение (FIN от инициатора, FIN-ACK от ответчика, ACK от инициатора), опишите в каких состояниях будет находиться TCP соединение в каждый момент времени на клиенте и на сервере при завершении. Схема переходов состояния соединения вам в этом поможет.
+ 
+Лучше всего этот вопрос иллюстрирует вот эта вот картинка
+
+8.	TCP порт – 16 битное число. Предположим, 2 находящихся в одной сети хоста устанавливают между собой соединения. Каким будет теоретическое максимальное число соединений, ограниченное только лишь параметрами L4, которое параллельно может установить клиент с одного IP адреса к серверу с одним IP адресом? Сколько соединений сможет обслужить сервер от одного клиента? А если клиентов больше одного?
+Насколько я понял, читая stackoverflow –
+“A single listening port can accept more than one connection simultaneously.
+There is a '64K' limit that is often cited, but that is per client per server port, and needs clarifying.
+Each TCP/IP packet has basically four fields for addressing. These are:
+source_ip source_port destination_ip destination_port
+<----- client ------> <--------- server ------------>
+Inside the TCP stack, these four fields are used as a compound key to match up packets to connections (e.g. file descriptors).
+If a client has many connections to the same port on the same destination, then three of those fields will be the same - only source_port varies to differentiate the different connections. Ports are 16-bit numbers, therefore the maximum number of connections any given client can have to any given host port is 64K.
+However, multiple clients can each have up to 64K connections to some server's port, and if the server has multiple ports or either is multi-homed then you can multiply that further.
+So the real limit is file descriptors. Each individual socket connection is given a file descriptor, so the limit is really the number of file descriptors that the system has been configured to allow and resources to handle. The maximum limit is typically up over 300K, but is configurable e.g. with sysctl.
+-	Количество клиент-сервер = 64к, а все остальные случаи ограничены лишь размерами ОЗУ и CPU
+
+9.	Может ли сложиться ситуация, при которой большое число соединений TCP на хосте находятся в состоянии TIME-WAIT? Если да, то является ли она хорошей или плохой? Подкрепите свой ответ пояснением той или иной оценки.
+Да, может в случае работы с sql, например и является плохой, так как сервер может продолжать открывать и закрывать множественные порты в единицу времени, но упрётся в лимиты. 
+Например для обычного центоса получаем список портов 
+[vagrant@10 ~]$ cat /proc/sys/net/ipv4/ip_local_port_range
+32768   60999
+Смотрим таймаут для fin
+[vagrant@10 ~]$ cat /proc/sys/net/ipv4/tcp_fin_timeout
+60
+Делаем вычисления 
+(60999-32768)/60 = 470 соединений в минуту, что не всегда достаточно и решается либо уменьшением таймаута либо увеличением количества портов
+10.	Чем особенно плоха фрагментация UDP относительно фрагментации TCP?
+Сложно сказать, что она плоха – Udp он же для звонков, видео и всего такого и потерянные пакеты вроде норм для этих целей. Однако для SIP, например, UDP не очень хорош, потому что создает магию вроде «тут работает, а вот тут не работает»
+Ну и в общем tcp – надежная доставка, udp – ненадежная
+11.	Если бы вы строили систему удаленного сбора логов, то есть систему, в которой несколько хостов отправяют на центральный узел генерируемые приложениями логи (предположим, что логи – текстовая информация), какой протокол транспортного уровня вы выбрали бы и почему? Проверьте ваше предположение самостоятельно, узнав о стандартном протоколе syslog.
+Я бы выбрал TCP, но судя по всему syslog использует UDP. Но возможность сменить протокол в нем есть, из чего следует, что в случае разрывов и потерь можно все же брать TCP
+12.	Сколько портов TCP находится в состоянии прослушивания на вашей виртуальной машине с Ubuntu, и каким процессам они принадлежат?
+[vagrant@10 ~]$ sudo netstat -lup
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+udp        0      0 localhost:323           0.0.0.0:*                           406/chronyd
+udp        0      0 0.0.0.0:938             0.0.0.0:*                           356/rpcbind
+udp        0      0 0.0.0.0:bootpc          0.0.0.0:*                           619/dhclient
+udp        0      0 0.0.0.0:sunrpc          0.0.0.0:*                           356/rpcbind
+udp6       0      0 localhost:323           [::]:*                              406/chronyd
+udp6       0      0 [::]:938                [::]:*                              356/rpcbind
+udp6       0      0 [::]:sunrpc             [::]:*                              356/rpcbind –
+
+
+13.	Какой ключ нужно добавить в tcpdump, чтобы он начал выводить не только заголовки, но и содержимое фреймов в текстовом виде? А в текстовом и шестнадцатиричном?
+[vagrant@10 ~]$ sudo tcpdump -c 3 -x
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
+17:58:16.558714 IP 10.0.2.15.ssh > 10.0.2.2.53721: Flags [P.], seq 1154045146:1154045310, ack 20537603, win 34800, length 164
+        0x0000:  4510 00cc 6942 4000 4006 b8c9 0a00 020f
+        0x0010:  0a00 0202 0016 d1d9 44c9 54da 0139 6103
+        0x0020:  5018 87f0 18cf 0000 95c8 1e4c 5f14 0619
+        0x0030:  dd60 f5b6 3c21 4fc0 cf5d 13dc 4273 4872
+        0x0040:  6b86 3128 6ff3 80f5 b524 663b ab60 a476
+        0x0050:  57d4 795f bc1e 0d76 af98 2235 a714 f6d2
+        0x0060:  21c8 3636 6eac 79c0 b84e 6ee7 6c7d da2f
+        0x0070:  1131 9d13 07d6 b104 93a8 fea4 7ec5 f472
+        0x0080:  4007 c31c fbc3 95c7 08b7 6cbb 2187 150d
+        0x0090:  60f2 7937 e0f9 328c f75e d317 379c 1281
+        0x00a0:  3752 7555 b193 3035 4497 e068 ddff 3ea3
+        0x00b0:  98b3 2a76 3162 4877 7766 4d3f f9a9 f21c
+        0x00c0:  2263 d395 9095 4b38 dee5 fae3
+17:58:16.558950 IP 10.0.2.2.53721 > 10.0.2.15.ssh: Flags [.], ack 164, win 65535, length 0
+        0x0000:  4500 0028 e318 0000 4006 7fa7 0a00 0202
+        0x0010:  0a00 020f d1d9 0016 0139 6103 44c9 557e
+        0x0020:  5010 ffff c950 0000 0000 0000 0000
+17:58:16.559181 IP 10.0.2.15.45525 > 10.0.2.3.domain: 19919+ PTR? 2.2.0.10.in-addr.arpa. (39)
+        0x0000:  4500 0043 0121 4000 4011 2178 0a00 020f
+        0x0010:  0a00 0203 b1d5 0035 002f 1852 4dcf 0100
+        0x0020:  0001 0000 0000 0000 0132 0132 0130 0231
+        0x0030:  3007 696e 2d61 6464 7204 6172 7061 0000
+        0x0040:  0c00 01
+3 packets captured
+10 packets received by filter
+0 packets dropped by kernel
+
+Ну и то же самое sudo tcpdump -c 3 -X или даже -XX
+
+14.	Попробуйте собрать дамп трафика с помощью tcpdump на основном интерфейсе вашей виртуальной машины и посмотреть его через tshark или Wireshark (можно ограничить число пакетов -c 100). Встретились ли вам какие-то установленные флаги Internet Protocol (не флаги TCP, а флаги IP)? Узнайте, какие флаги бывают. Как на самом деле называется стандарт Ethernet, фреймы которого попали в ваш дамп? Можно ли где-то в дампе увидеть OUI?
+
+А вот тут вот непонятно, дампы собрал, но что из них найти нужно, не совсем ясно.
+•	Флаги IP указывают про фрагментацию 
+•	0: Зарезервирован, должен быть равен 0.[13]
+•	1: Не фрагментировать
+•	2: У пакета ещё есть фрагменты
+Следующая команда должна возвращать OUI? Но у меня почему-то пустое поле (((
+tshark -r capture_file -T fields -e eth.addr_resolved
+
+
+
+[vagrant@10 ~]$ sudo tshark -r capture_file
+Running as user "root" and group "root". This could be dangerous.
+  1          0    10.0.2.15 -> 10.0.2.2     SSH 90 Encrypted response packet len=36
+  2          0     10.0.2.2 -> 10.0.2.15    TCP 60 53721 > ssh [ACK] Seq=1 Ack=37 Win=65535 Len=0
+  3        114    10.0.2.15 -> 185.65.137.155 NTP 90 NTP Version 4, client
+  4        114     10.0.2.2 -> 10.0.2.15    ICMP 70 Destination unreachable (Network unreachable)
+  5        119 RealtekU_4d:77:d3 -> RealtekU_12:35:02 ARP 42 Who has 10.0.2.2?  Tell 10.0.2.15
+  6        119 RealtekU_12:35:02 -> RealtekU_4d:77:d3 ARP 60 10.0.2.2 is at 52:54:00:12:35:02
+  7        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [SYN] Seq=0 Win=65535 Len=0 MSS=1460
+  8        166    10.0.2.15 -> 10.0.2.2     TCP 58 ssh > 60171 [SYN, ACK] Seq=0 Ack=1 Win=29200 Len=0 MSS=1460
+  9        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=1 Ack=1 Win=65535 Len=0
+ 10        166     10.0.2.2 -> 10.0.2.15    SSH 87 Client Protocol: SSH-2.0-OpenSSH_for_Windows_8.1\r
+ 11        166    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=1 Ack=34 Win=29200 Len=0
+ 12        166    10.0.2.15 -> 10.0.2.2     SSHv2 75 Server Protocol: SSH-2.0-OpenSSH_7.4\r
+ 13        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=34 Ack=22 Win=65535 Len=0
+ 14        166     10.0.2.2 -> 10.0.2.15    SSHv2 1446 Client: Key Exchange Init
+ 15        166    10.0.2.15 -> 10.0.2.2     SSHv2 1334 Server: Key Exchange Init
+ 16        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=1426 Ack=1302 Win=65535 Len=0
+ 17        166     10.0.2.2 -> 10.0.2.15    SSHv2 102 Client: Diffie-Hellman Key Exchange Init
+ 18        166    10.0.2.15 -> 10.0.2.2     SSHv2 418 Server: New Keys
+ 19        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=1474 Ack=1666 Win=65535 Len=0
+ 20        166     10.0.2.2 -> 10.0.2.15    SSHv2 70 Client: New Keys
+ 21        166     10.0.2.2 -> 10.0.2.15    SSHv2 98 Encrypted request packet len=44
+ 22        166    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=1666 Ack=1534 Win=32016 Len=0
+ 23        166    10.0.2.15 -> 10.0.2.2     TCP 98 [TCP segment of a reassembled PDU]
+ 24        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=1534 Ack=1710 Win=65535 Len=0
+ 25        166     10.0.2.2 -> 10.0.2.15    SSHv2 122 Encrypted request packet len=68
+ 26        166    10.0.2.15 -> 10.0.2.2     TCP 130 [TCP segment of a reassembled PDU]
+ 27        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=1602 Ack=1786 Win=65535 Len=0
+ 28        166     10.0.2.2 -> 10.0.2.15    SSHv2 706 Encrypted request packet len=652
+ 29        166    10.0.2.15 -> 10.0.2.2     TCP 82 [TCP segment of a reassembled PDU]
+ 30        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2254 Ack=1814 Win=65535 Len=0
+ 31        166     10.0.2.2 -> 10.0.2.15    SSHv2 166 Encrypted request packet len=112
+ 32        166    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=1814 Ack=2366 Win=34800 Len=0
+ 33        166    10.0.2.15 -> 10.0.2.2     TCP 554 [TCP segment of a reassembled PDU]
+ 34        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2366 Ack=2314 Win=65535 Len=0
+ 35        166    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 36        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2366 Ack=2350 Win=65535 Len=0
+ 37        166     10.0.2.2 -> 10.0.2.15    SSHv2 174 Encrypted request packet len=120
+ 38        166    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=2350 Ack=2486 Win=34800 Len=0
+ 39        166    10.0.2.15 -> 10.0.2.2     TCP 162 [TCP segment of a reassembled PDU]
+ 40        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2486 Ack=2458 Win=65535 Len=0
+ 41        166     10.0.2.2 -> 10.0.2.15    SSHv2 106 Encrypted request packet len=52
+ 42        166    10.0.2.15 -> 10.0.2.2     TCP 138 [TCP segment of a reassembled PDU]
+ 43        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2538 Ack=2542 Win=65535 Len=0
+ 44        166    10.0.2.15 -> 10.0.2.2     TCP 106 [TCP segment of a reassembled PDU]
+ 45        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2538 Ack=2594 Win=65535 Len=0
+ 46        166    10.0.2.15 -> 10.0.2.2     TCP 106 [TCP segment of a reassembled PDU]
+ 47        166     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2538 Ack=2646 Win=65535 Len=0
+ 48        246     10.0.2.2 -> 10.0.2.15    SSHv2 98 Encrypted request packet len=44
+ 49        246     10.0.2.2 -> 10.0.2.15    SSHv2 98 Encrypted request packet len=44
+ 50        246    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=2646 Ack=2626 Win=34800 Len=0
+ 51        246     10.0.2.2 -> 10.0.2.15    SSHv2 98 Encrypted request packet len=44
+ 52        246     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 53        246    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=2646 Ack=2706 Win=34800 Len=0
+ 54        246    10.0.2.15 -> 10.0.2.2     TCP 114 [TCP segment of a reassembled PDU]
+ 55        246     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2706 Ack=2706 Win=65535 Len=0
+ 56        246    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 57        246     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2706 Ack=2742 Win=65535 Len=0
+ 58        247     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 59        247    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 60        247     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2742 Ack=2778 Win=65535 Len=0
+ 61        247    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 62        247     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2742 Ack=2814 Win=65535 Len=0
+ 63        249     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 64        249    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 65        249     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2778 Ack=2850 Win=65535 Len=0
+ 66        249     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 67        249    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 68        249     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2814 Ack=2886 Win=65535 Len=0
+ 69        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 70        250    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 71        250     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2850 Ack=2922 Win=65535 Len=0
+ 72        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 73        250    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 74        250     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2886 Ack=2958 Win=65535 Len=0
+ 75        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 76        250    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 77        250     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2922 Ack=2994 Win=65535 Len=0
+ 78        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 79        250    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 80        250     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=2958 Ack=3030 Win=65535 Len=0
+ 81        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 82        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 83        250    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=3030 Ack=3030 Win=34800 Len=0
+ 84        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 85        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 86        250    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=3030 Ack=3102 Win=34800 Len=0
+ 87        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 88        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 89        250    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=3030 Ack=3174 Win=34800 Len=0
+ 90        250     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 91        250    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=3030 Ack=3210 Win=34800 Len=0
+ 92        251     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 93        251    10.0.2.15 -> 10.0.2.2     TCP 54 ssh > 60171 [ACK] Seq=3030 Ack=3246 Win=34800 Len=0
+ 94        251    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 95        251     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=3246 Ack=3066 Win=65535 Len=0
+ 96        251     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+ 97        251    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+ 98        251     10.0.2.2 -> 10.0.2.15    TCP 60 60171 > ssh [ACK] Seq=3282 Ack=3102 Win=65535 Len=0
+ 99        251     10.0.2.2 -> 10.0.2.15    SSHv2 90 Encrypted request packet len=36
+100        251    10.0.2.15 -> 10.0.2.2     TCP 90 [TCP segment of a reassembled PDU]
+[vagrant@10 ~]$ tcpdump -r capture_file
+reading from file capture_file, link-type EN10MB (Ethernet)
+18:04:38.347856 IP 10.0.2.15.ssh > 10.0.2.2.53721: Flags [P.], seq 1154054070:1154054106, ack 20544407, win 34800, length 36
+18:04:38.348116 IP 10.0.2.2.53721 > 10.0.2.15.ssh: Flags [.], ack 36, win 65535, length 0
+18:06:32.700302 IP 10.0.2.15.56351 > bclk-ntp-01.activeby.net.ntp: NTPv4, Client, length 48
+18:06:32.700741 IP 10.0.2.2 > 10.0.2.15: ICMP net bclk-ntp-01.activeby.net unreachable, length 36
+18:06:37.726378 ARP, Request who-has 10.0.2.2 tell 10.0.2.15, length 28
+18:06:37.726480 ARP, Reply 10.0.2.2 is-at 52:54:00:12:35:02 (oui Unknown), length 46
+18:07:24.957473 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [S], seq 2309056001, win 65535, options [mss 1460], length 0
+18:07:24.957504 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [S.], seq 3653965372, ack 2309056002, win 29200, options [mss 1460], length 0
+18:07:24.957619 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1, win 65535, length 0
+18:07:24.965097 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1:34, ack 1, win 65535, length 33
+18:07:24.965114 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 34, win 29200, length 0
+18:07:24.984153 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1:22, ack 34, win 29200, length 21
+18:07:24.984426 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 22, win 65535, length 0
+18:07:24.984783 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 34:1426, ack 22, win 65535, length 1392
+18:07:24.989458 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 22:1302, ack 1426, win 32016, length 1280
+18:07:24.989765 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1302, win 65535, length 0
+18:07:24.991843 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1426:1474, ack 1302, win 65535, length 48
+18:07:25.007452 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1302:1666, ack 1474, win 32016, length 364
+18:07:25.007750 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1666, win 65535, length 0
+18:07:25.012967 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1474:1490, ack 1666, win 65535, length 16
+18:07:25.012976 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1490:1534, ack 1666, win 65535, length 44
+18:07:25.013026 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 1534, win 32016, length 0
+18:07:25.013068 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1666:1710, ack 1534, win 32016, length 44
+18:07:25.013197 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1710, win 65535, length 0
+18:07:25.013387 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1534:1602, ack 1710, win 65535, length 68
+18:07:25.014311 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1710:1786, ack 1602, win 32016, length 76
+18:07:25.014450 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1786, win 65535, length 0
+18:07:25.024102 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 1602:2254, ack 1786, win 65535, length 652
+18:07:25.031879 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1786:1814, ack 2254, win 34800, length 28
+18:07:25.032105 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 1814, win 65535, length 0
+18:07:25.033381 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2254:2366, ack 1814, win 65535, length 112
+18:07:25.073296 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 2366, win 34800, length 0
+18:07:25.220814 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 1814:2314, ack 2366, win 34800, length 500
+18:07:25.221073 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2314, win 65535, length 0
+18:07:25.221083 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2314:2350, ack 2366, win 34800, length 36
+18:07:25.221216 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2350, win 65535, length 0
+18:07:25.221544 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2366:2486, ack 2350, win 65535, length 120
+18:07:25.221550 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 2486, win 34800, length 0
+18:07:25.226925 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2350:2458, ack 2486, win 34800, length 108
+18:07:25.227154 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2458, win 65535, length 0
+18:07:25.228105 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2486:2538, ack 2458, win 65535, length 52
+18:07:25.229475 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2458:2542, ack 2538, win 34800, length 84
+18:07:25.229646 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2542, win 65535, length 0
+18:07:25.285379 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2542:2594, ack 2538, win 34800, length 52
+18:07:25.285571 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2594, win 65535, length 0
+18:07:25.285700 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2594:2646, ack 2538, win 34800, length 52
+18:07:25.285812 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2646, win 65535, length 0
+18:08:44.473287 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2538:2582, ack 2646, win 65535, length 44
+18:08:44.473307 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2582:2626, ack 2646, win 65535, length 44
+18:08:44.473368 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 2626, win 34800, length 0
+18:08:44.473485 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2626:2670, ack 2646, win 65535, length 44
+18:08:44.473620 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2670:2706, ack 2646, win 65535, length 36
+18:08:44.473776 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 2706, win 34800, length 0
+18:08:44.473844 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2646:2706, ack 2706, win 34800, length 60
+18:08:44.473905 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2706, win 65535, length 0
+18:08:44.473980 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2706:2742, ack 2706, win 34800, length 36
+18:08:44.474066 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2742, win 65535, length 0
+18:08:45.471860 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2706:2742, ack 2742, win 65535, length 36
+18:08:45.472875 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2742:2778, ack 2742, win 34800, length 36
+18:08:45.473155 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2778, win 65535, length 0
+18:08:45.923731 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2778:2814, ack 2742, win 34800, length 36
+18:08:45.923974 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2814, win 65535, length 0
+18:08:47.525182 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2742:2778, ack 2814, win 65535, length 36
+18:08:47.525356 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2814:2850, ack 2778, win 34800, length 36
+18:08:47.525643 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2850, win 65535, length 0
+18:08:47.950612 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2778:2814, ack 2850, win 65535, length 36
+18:08:47.950779 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2850:2886, ack 2814, win 34800, length 36
+18:08:47.950962 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2886, win 65535, length 0
+18:08:48.499469 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2814:2850, ack 2886, win 65535, length 36
+18:08:48.499614 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2886:2922, ack 2850, win 34800, length 36
+18:08:48.499771 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2922, win 65535, length 0
+18:08:48.533324 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2850:2886, ack 2922, win 65535, length 36
+18:08:48.533474 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2922:2958, ack 2886, win 34800, length 36
+18:08:48.533605 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2958, win 65535, length 0
+18:08:48.567149 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2886:2922, ack 2958, win 65535, length 36
+18:08:48.567296 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2958:2994, ack 2922, win 34800, length 36
+18:08:48.567467 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 2994, win 65535, length 0
+18:08:48.600982 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2922:2958, ack 2994, win 65535, length 36
+18:08:48.601143 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 2994:3030, ack 2958, win 34800, length 36
+18:08:48.601418 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 3030, win 65535, length 0
+18:08:48.634638 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2958:2994, ack 3030, win 65535, length 36
+18:08:48.668637 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 2994:3030, ack 3030, win 65535, length 36
+18:08:48.668669 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 3030, win 34800, length 0
+18:08:48.705640 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3030:3066, ack 3030, win 65535, length 36
+18:08:48.739473 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3066:3102, ack 3030, win 65535, length 36
+18:08:48.739490 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 3102, win 34800, length 0
+18:08:48.773433 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3102:3138, ack 3030, win 65535, length 36
+18:08:48.807173 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3138:3174, ack 3030, win 65535, length 36
+18:08:48.807194 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 3174, win 34800, length 0
+18:08:48.840847 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3174:3210, ack 3030, win 65535, length 36
+18:08:48.883678 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 3210, win 34800, length 0
+18:08:49.350583 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3210:3246, ack 3030, win 65535, length 36
+18:08:49.350600 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [.], ack 3246, win 34800, length 0
+18:08:49.350826 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 3030:3066, ack 3246, win 34800, length 36
+18:08:49.350950 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 3066, win 65535, length 0
+18:08:49.657179 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3246:3282, ack 3066, win 65535, length 36
+18:08:49.657369 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 3066:3102, ack 3282, win 34800, length 36
+18:08:49.657539 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [.], ack 3102, win 65535, length 0
+18:08:49.829381 IP 10.0.2.2.60171 > 10.0.2.15.ssh: Flags [P.], seq 3282:3318, ack 3102, win 65535, length 36
+18:08:49.829577 IP 10.0.2.15.ssh > 10.0.2.2.60171: Flags [P.], seq 3102:3138, ack 3318, win 34800, length 36
+
