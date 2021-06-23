@@ -10,4 +10,4 @@ for result in result_os.split('\n'):
     elif result.find('new') != -1:
         prepare_result = result.replace('\tnew file:   ', '')
         print('New file:', current_directory + '\\' + prepare_result)
-
+        exit('all done')
