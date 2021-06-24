@@ -1,10 +1,22 @@
 #!/usr/bin/env python3
 import os, sys
-repo_dir = sys.argv[1]
-bash_command = ["cd" + " " + repo_dir, "git status"]
+target_folder = sys.argv[1]
+counter = 0
+if os.path.isdir(target_folder + '//.git'):
+    print('Next files were changed or created from last push')
+else:
+    print('folder not a git')
+    exit()
+bash_command = ["cd" + " " + target_folder, "git status"]
 result_os = os.popen(' && '.join(bash_command)).read()
-is_change = False
 for result in result_os.split('\n'):
     if result.find('modified') != -1:
-        prepare_result = result.replace('\tmodified:   ', repo_dir + "/")
-        print(prepare_result)
+        prepare_result = result.replace('\tmodified:   ', '')
+        print('Modified:', target_folder + '\\' + prepare_result)
+        counter += 1
+    elif result.find('new') != -1:
+        prepare_result = result.replace('\tnew file:   ', '')
+        print('New file:', target_folder + '\\' + prepare_result)
+        counter += 1
+if counter == 0:
+    print('nothing changed')
