@@ -6,10 +6,14 @@ if os.path.exists('out.txt'):
     print('file exist')
     with open('out.txt', 'r') as f:
         for list_file in f:
-            k, v = list_file.strip().split()
-            ip = socket.gethostbyname(k)
-            if ip != v:
-                print('[ERROR]', k,  'IP mismatch:', v, '=>', ip)
+            arr = {}
+            row = list_file.split()
+            key = row[0]
+            value = row[1]
+            arr[key] = value
+            ip = socket.gethostbyname(arr[key])
+            if ip != arr[key]:
+                print('[ERROR]', arr[key],  'IP mismatch:', arr[value], '=>', ip)
     os.remove('out.txt')
 else:
     print('file not exist, nothing to compare')
