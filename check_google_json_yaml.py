@@ -11,6 +11,7 @@ if os.path.exists('out.json'):
     print('file exist')
     with open('out.json', 'r') as f:
         js = json.load(f)
+        yml = yaml.safe_load(f)
         for key in js:
             ip = socket.gethostbyname(key)
             if ip != js[key]:
@@ -22,6 +23,8 @@ else:
 for server in servers:
     ip = socket.gethostbyname(server)
     print(server, ip)
+    js_dict[server] = ip
     with open('out.json', 'w') as file_json:
-        js_dict[server] = ip
         file_json.write(json.dumps(js_dict, indent=2))
+    with open('out.yaml', 'w') as file_yaml:
+        file_yaml.write(yaml.safe_dump(js_dict, explicit_start=True, explicit_end=True))
